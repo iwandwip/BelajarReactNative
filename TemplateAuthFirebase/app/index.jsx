@@ -1,51 +1,48 @@
-import React from "react";
-import { Text } from "react-native";
-import { Tabs } from "expo-router";
-import { useSettings } from "../../contexts/SettingsContext";
-import { useTranslation } from "../../hooks/useTranslation";
-import { getColors } from "../../constants/Colors";
+import React, { useEffect } from "react";
+import { View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { Colors } from "../constants/Colors";
 
-export default function TabsLayout() {
-  const { theme } = useSettings();
-  const { t } = useTranslation();
-  const colors = getColors(theme);
+export default function Index() {
+  const { currentUser, loading, authInitialized, isAdmin } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (authInitialized && !loading) {
+      if (currentUser) {
+        if (isAdmin) {
+          router.replace("/(admin)");
+        } else {
+          router.replace("/(tabs)");
+        }
+      } else {
+        router.replace("/(auth)/login");
+      }
+    }
+  }, [currentUser, loading, authInitialized, isAdmin]);
+
+  if (!authInitialized || loading) {
+    return (
+      <View style={styles.container}>
+        <LoadingSpinner text="Initializing..." />
+      </View>
+    );
+  }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.gray500,
-        tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.border,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t("common.home"),
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>🏠</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t("common.settings"),
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>⚙️</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="edit-profile"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
+    <View style={styles.container}>
+      <LoadingSpinner text="Redirecting..." />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+});

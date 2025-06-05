@@ -96,6 +96,7 @@ export const AuthProvider = ({ children }) => {
 
     const initializeAuth = () => {
       if (!auth) {
+        console.warn("Firebase Auth not available, using fallback");
         if (mounted) {
           setCurrentUser(null);
           setUserProfile(null);
@@ -111,6 +112,10 @@ export const AuthProvider = ({ children }) => {
           auth,
           async (user) => {
             if (mounted) {
+              console.log(
+                "Auth state changed:",
+                user ? "User logged in" : "User logged out"
+              );
               setCurrentUser(user);
               await loadUserProfile(user);
               setLoading(false);
@@ -149,7 +154,7 @@ export const AuthProvider = ({ children }) => {
         setAuthInitialized(true);
         setIsAdmin(false);
       }
-    }, 10000);
+    }, 5000);
 
     initializeAuth();
 

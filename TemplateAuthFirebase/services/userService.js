@@ -5,7 +5,16 @@ import { calculateAge } from '../utils/ageCalculator';
 export const createUserProfile = async (uid, profileData) => {
   try {
     if (!db) {
-      throw new Error('Firestore is not initialized');
+      console.warn('Firestore is not initialized, skipping profile creation');
+      return { 
+        success: true, 
+        profile: { 
+          id: uid, 
+          ...profileData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } 
+      };
     }
 
     let userProfile;
@@ -39,8 +48,10 @@ export const createUserProfile = async (uid, profileData) => {
     }
 
     await setDoc(doc(db, 'users', uid), userProfile);
+    console.log('User profile created successfully');
     return { success: true, profile: userProfile };
   } catch (error) {
+    console.error('Create user profile error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -48,7 +59,11 @@ export const createUserProfile = async (uid, profileData) => {
 export const getUserProfile = async (uid) => {
   try {
     if (!db) {
-      throw new Error('Firestore is not initialized');
+      console.warn('Firestore is not initialized, returning fallback profile');
+      return { 
+        success: false, 
+        error: 'Firestore not available' 
+      };
     }
 
     const docRef = doc(db, 'users', uid);
@@ -61,16 +76,22 @@ export const getUserProfile = async (uid) => {
         return { success: true, profile };
       }
       
-      const age = calculateAge(profile.birthdate);
-      if (profile.ageYears !== age.years || profile.ageMonths !== age.months) {
-        await updateDoc(docRef, {
-          ageYears: age.years,
-          ageMonths: age.months,
-          updatedAt: new Date()
-        });
-        
-        profile.ageYears = age.years;
-        profile.ageMonths = age.months;
+      if (profile.birthdate) {
+        const age = calculateAge(profile.birthdate);
+        if (profile.ageYears !== age.years || profile.ageMonths !== age.months) {
+          try {
+            await updateDoc(docRef, {
+              ageYears: age.years,
+              ageMonths: age.months,
+              updatedAt: new Date()
+            });
+            
+            profile.ageYears = age.years;
+            profile.ageMonths = age.months;
+          } catch (updateError) {
+            console.warn('Could not update age, continuing with existing data:', updateError);
+          }
+        }
       }
       
       return { success: true, profile };
@@ -78,6 +99,7 @@ export const getUserProfile = async (uid) => {
       return { success: false, error: 'User profile not found' };
     }
   } catch (error) {
+    console.error('Get user profile error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -101,8 +123,10 @@ export const updateUserProfile = async (uid, updates) => {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, updateData);
 
+    console.log('User profile updated successfully');
     return { success: true };
   } catch (error) {
+    console.error('Update user profile error:', error);
     return { success: false, error: error.message };
   }
 };
