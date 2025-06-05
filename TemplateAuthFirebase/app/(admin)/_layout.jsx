@@ -32,27 +32,12 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="all-users"
-        options={{
-          title: t("common.allUsers"),
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>👥</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           title: t("common.settings"),
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>⚙️</Text>
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="user-detail"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

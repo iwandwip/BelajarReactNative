@@ -72,7 +72,7 @@ function Home() {
           {userProfile ? (
             <View style={styles.profileContainer}>
               <View style={styles.profileCard}>
-                <Text style={styles.cardTitle}>{t("home.childProfile")}</Text>
+                <Text style={styles.cardTitle}>{t("home.userProfile")}</Text>
 
                 <View style={styles.profileRow}>
                   <Text style={styles.label}>{t("common.name")}:</Text>
@@ -101,20 +101,6 @@ function Home() {
                   <Text style={styles.label}>{t("common.birthDate")}:</Text>
                   <Text style={styles.value}>
                     {formatDate(userProfile.birthdate)}
-                  </Text>
-                </View>
-
-                <View style={styles.profileRow}>
-                  <Text style={styles.label}>{t("home.parent")}:</Text>
-                  <Text style={styles.value}>{userProfile.parentName}</Text>
-                </View>
-
-                <View style={styles.profileRow}>
-                  <Text style={styles.label}>{t("home.rfid")}:</Text>
-                  <Text
-                    style={[styles.value, !userProfile.rfid && styles.notSet]}
-                  >
-                    {userProfile.rfid || t("home.notAssigned")}
                   </Text>
                 </View>
 
@@ -237,10 +223,6 @@ const createStyles = (colors) =>
       color: colors.gray900,
       flex: 2,
       textAlign: "right",
-    },
-    notSet: {
-      color: colors.gray400,
-      fontStyle: "italic",
     },
     loadingContainer: {
       backgroundColor: colors.white,

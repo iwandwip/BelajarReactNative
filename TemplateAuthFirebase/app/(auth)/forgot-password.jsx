@@ -96,10 +96,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
-  },
-  illustrationContainer: {
-    marginBottom: 20,
+    paddingTop: 60,
   },
   description: {
     fontSize: 16,

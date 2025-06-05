@@ -34,7 +34,7 @@ export default function Register() {
         "Account Created",
         isAdmin
           ? "Admin account has been created successfully!"
-          : "Your account has been created successfully! You can pair your RFID card from Edit Profile.",
+          : "Your account has been created successfully!",
         [
           {
             text: "OK",
@@ -106,10 +106,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
-  },
-  illustrationContainer: {
-    marginBottom: 20,
+    paddingTop: 60,
   },
   formContainer: {
     flex: 1,

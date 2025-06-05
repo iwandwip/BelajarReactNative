@@ -52,14 +52,14 @@ export const signUpWithEmail = async (email, password, profileData) => {
       profilePayload = {
         email,
         name: 'Admin',
-        role: 'teacher',
+        role: 'admin',
         isAdmin: true
       };
     } else {
       profilePayload = {
         email,
         ...profileData,
-        role: 'student',
+        role: 'user',
         isAdmin: false
       };
     }

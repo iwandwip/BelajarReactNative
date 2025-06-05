@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const checkAdminStatus = (user, profile) => {
     return (
       user?.email === "admin@gmail.com" ||
-      profile?.role === "teacher" ||
+      profile?.role === "admin" ||
       profile?.isAdmin
     );
   };
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
             id: user.uid,
             email: user.email,
             name: "Admin",
-            role: "teacher",
+            role: "admin",
             isAdmin: true,
           });
         } else {
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
           id: user.uid,
           email: user.email,
           name: "Admin",
-          role: "teacher",
+          role: "admin",
           isAdmin: true,
         });
       } else {

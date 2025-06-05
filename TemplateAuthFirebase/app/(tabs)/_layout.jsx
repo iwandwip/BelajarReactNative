@@ -32,18 +32,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="timbang"
+        name="table"
         options={{
-          title: t("common.timbang"),
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>⚖️</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="data-recap"
-        options={{
-          title: t("common.dataRecap"),
+          title: t("common.table"),
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>📊</Text>
           ),

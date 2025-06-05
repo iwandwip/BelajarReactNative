@@ -1,60 +1,51 @@
-import React, { useEffect, useRef } from "react";
-import { useRouter } from "expo-router";
-import { View, Text } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
-import LoadingSpinner from "../components/ui/LoadingSpinner";
-import { Colors } from "../constants/Colors";
+import React from "react";
+import { Text } from "react-native";
+import { Tabs } from "expo-router";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useTranslation } from "../../hooks/useTranslation";
+import { getColors } from "../../constants/Colors";
 
-export default function Index() {
-  const { currentUser, loading, authInitialized, isAdmin } = useAuth();
-  const router = useRouter();
-  const redirectedRef = useRef(false);
-
-  useEffect(() => {
-    if (authInitialized && !loading && !redirectedRef.current) {
-      redirectedRef.current = true;
-
-      const redirect = () => {
-        if (currentUser) {
-          if (isAdmin) {
-            router.replace("/(admin)");
-          } else {
-            router.replace("/(tabs)");
-          }
-        } else {
-          router.replace("/(auth)/login");
-        }
-      };
-
-      const timeoutId = setTimeout(redirect, 100);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [authInitialized, loading, currentUser, isAdmin, router]);
-
-  if (!authInitialized || loading) {
-    return (
-      <View style={styles.container}>
-        <LoadingSpinner text="Loading app..." />
-      </View>
-    );
-  }
+export default function TabsLayout() {
+  const { theme } = useSettings();
+  const { t } = useTranslation();
+  const colors = getColors(theme);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Redirecting...</Text>
-    </View>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.gray500,
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: colors.border,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t("common.home"),
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>🏠</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t("common.settings"),
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>⚙️</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="edit-profile"
+        options={{
+          href: null,
+        }}
+      />
+    </Tabs>
   );
 }
-
-const styles = {
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.background,
-  },
-  text: {
-    fontSize: 16,
-    color: Colors.gray600,
-  },
-};

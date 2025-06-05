@@ -11,11 +11,14 @@ import { Colors } from "../../constants/Colors";
 const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "sehat":
+      case "active":
+      case "verified":
         return Colors.success;
-      case "tidak sehat":
+      case "pending":
+      case "warning":
         return Colors.warning;
-      case "obesitas":
+      case "inactive":
+      case "error":
         return Colors.error;
       default:
         return Colors.gray700;
@@ -44,6 +47,32 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
     );
   };
 
+  const renderCell = (value, columnIndex, rowIndex) => {
+    if (columnIndex === headers.length - 1) {
+      return renderActionButtons(value, rowIndex);
+    }
+
+    if (typeof value === "object" && value.status) {
+      return (
+        <Text
+          style={[
+            styles.cellText,
+            styles.statusText,
+            { color: getStatusColor(value.status) },
+          ]}
+        >
+          {value.status}
+        </Text>
+      );
+    }
+
+    return (
+      <Text style={styles.cellText} numberOfLines={2}>
+        {String(value)}
+      </Text>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -68,27 +97,19 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
               ]}
             >
               <View style={[styles.dataCell, styles.column0]}>
-                <Text style={styles.cellText}>{row.dateTime}</Text>
+                {renderCell(row.name, 0, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column1]}>
-                <Text style={styles.cellText}>{row.weight}</Text>
+                {renderCell(row.email, 1, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column2]}>
-                <Text style={styles.cellText}>{row.height}</Text>
+                {renderCell(row.date, 2, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column3]}>
-                <Text
-                  style={[
-                    styles.cellText,
-                    styles.statusText,
-                    { color: getStatusColor(row.nutritionStatus) },
-                  ]}
-                >
-                  {row.nutritionStatus}
-                </Text>
+                {renderCell({ status: row.status }, 3, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column4]}>
-                {renderActionButtons(row, rowIndex)}
+                {renderCell(row, 4, rowIndex)}
               </View>
             </View>
           ))}
@@ -155,6 +176,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontWeight: "500",
+    textTransform: "capitalize",
   },
   actionButtons: {
     flexDirection: "row",
@@ -181,16 +203,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   column0: {
-    width: 140,
+    width: 120,
   },
   column1: {
-    width: 80,
+    width: 150,
   },
   column2: {
-    width: 80,
+    width: 100,
   },
   column3: {
-    width: 100,
+    width: 80,
   },
   column4: {
     width: 90,
