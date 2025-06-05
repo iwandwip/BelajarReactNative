@@ -37,6 +37,11 @@ EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789:web:xxxxxxxxxxxxx
 EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
+#### C. Setup Firestore Security Rules
+1. Go to Firebase Console → Firestore Database → Rules
+2. Copy content from `firestore.rules` file
+3. Publish the rules
+
 ### 3. Run the App
 ```bash
 npm start
@@ -54,32 +59,62 @@ yarn start
 - Register normally with any email
 - Will get user role
 
-## Troubleshooting
-
-### White Screen on Login
-1. Check Firebase config in `.env`
-2. Check console for errors
-3. Ensure Firebase Auth is enabled
-4. Clear cache: `npm run clear`
-
-### Firebase Errors
-1. Verify all Firebase config values
-2. Check Firebase project settings
-3. Ensure Firestore rules allow read/write
-
-### Build Issues
-1. Clear node_modules: `rm -rf node_modules && npm install`
-2. Clear Expo cache: `npx expo start --clear`
-3. Reset Metro: `npx react-native start --reset-cache`
-
 ## Features
-- 🔐 Email/Password Authentication
-- 👤 User Profile Management
-- 👨‍💼 Admin Panel
-- 📊 Data Table Management
-- 🌍 Multi-language (EN/ID)
-- 🌙 Dark/Light Theme
-- 📱 Responsive Design
+
+### 🔐 Authentication
+- Email/Password Authentication
+- User Profile Management
+- Admin Panel
+- Role-based Access Control
+
+### 📊 Data Management
+- Personal data storage in Firestore
+- Nested collections per user
+- CRUD operations for data entries
+- Real-time data synchronization
+
+### 🌍 Localization
+- Multi-language (EN/ID)
+- Dynamic text switching
+
+### 🌙 Theming
+- Dark/Light Theme
+- Persistent theme storage
+
+### 📱 UI/UX
+- Modern pink color scheme (#F50057)
+- Responsive design
+- Custom illustrations
+- Splash screen
+
+## Data Structure
+
+### User Profile
+```javascript
+{
+  id: string,
+  email: string,
+  name: string,
+  role: 'user' | 'admin',
+  birthdate?: string,
+  gender?: 'male' | 'female',
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### User Data Entries
+```javascript
+{
+  id: string,
+  date: string,
+  value1: number,
+  value2: number,
+  status: 'active' | 'pending' | 'inactive' | 'completed' | 'error',
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
 ## File Structure
 ```
@@ -91,12 +126,42 @@ yarn start
 ├── components/            # Reusable components
 ├── contexts/              # React contexts
 ├── services/              # API services
+│   ├── authService.js     # Authentication
+│   ├── userService.js     # User management
+│   ├── dataService.js     # Data CRUD operations
+│   └── firebase.js        # Firebase config
 ├── utils/                 # Utility functions
-└── constants/             # App constants
+├── constants/             # App constants
+└── assets/                # Images and static files
 ```
 
+## Troubleshooting
+
+### White Screen on Login
+1. Check Firebase config in `.env`
+2. Check console for errors
+3. Ensure Firebase Auth is enabled
+4. Clear cache: `npm run clear`
+
+### Firestore Permission Errors
+1. Verify Firestore rules are published
+2. Check user authentication status
+3. Ensure proper user ID matching
+
+### Data Not Saving
+1. Check Firestore connection
+2. Verify user authentication
+3. Check console for detailed errors
+4. Ensure proper Firebase project setup
+
+### Build Issues
+1. Clear node_modules: `rm -rf node_modules && npm install`
+2. Clear Expo cache: `npx expo start --clear`
+3. Reset Metro: `npx react-native start --reset-cache`
+
 ## Production Deployment
-1. Update Firebase security rules
+1. Update Firebase security rules for production
 2. Configure proper domains in Firebase
 3. Set up environment variables in hosting service
 4. Build: `npx expo build:web` or `eas build`
+5. Enable Firestore production mode

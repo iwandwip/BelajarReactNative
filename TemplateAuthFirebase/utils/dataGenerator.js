@@ -1,23 +1,8 @@
-const sampleNames = [
-  "John Doe", "Jane Smith", "Michael Brown", "Emily Davis", 
-  "David Wilson", "Sarah Johnson", "Chris Lee", "Amanda Taylor",
-  "Robert Garcia", "Lisa Martinez", "Kevin Anderson", "Maria Rodriguez",
-  "James Thompson", "Jennifer White", "Daniel Moore", "Jessica Harris"
-];
+const statusOptions = ["active", "pending", "inactive", "completed", "error"];
 
-const sampleEmails = [
-  "john.doe@email.com", "jane.smith@email.com", "michael.brown@email.com",
-  "emily.davis@email.com", "david.wilson@email.com", "sarah.johnson@email.com",
-  "chris.lee@email.com", "amanda.taylor@email.com", "robert.garcia@email.com",
-  "lisa.martinez@email.com", "kevin.anderson@email.com", "maria.rodriguez@email.com",
-  "james.thompson@email.com", "jennifer.white@email.com", "daniel.moore@email.com",
-  "jessica.harris@email.com"
-];
-
-const statusOptions = ["active", "pending", "inactive", "verified"];
-
-const getRandomElement = (array) => {
-  return array[Math.floor(Math.random() * array.length)];
+const getRandomFloat = (min = 0, max = 1000, decimals = 2) => {
+  const value = Math.random() * (max - min) + min;
+  return parseFloat(value.toFixed(decimals));
 };
 
 const getRandomDate = (daysBack = 30) => {
@@ -28,25 +13,27 @@ const getRandomDate = (daysBack = 30) => {
   return randomDate.toISOString().split('T')[0];
 };
 
+const getRandomStatus = () => {
+  return statusOptions[Math.floor(Math.random() * statusOptions.length)];
+};
+
 export const generateSampleData = () => {
-  const id = Math.random().toString(36).substr(2, 9);
-  const name = getRandomElement(sampleNames);
-  const email = getRandomElement(sampleEmails);
   const date = getRandomDate();
-  const status = getRandomElement(statusOptions);
+  const value1 = getRandomFloat(10, 500, 2);
+  const value2 = getRandomFloat(1, 100, 2);
+  const status = getRandomStatus();
 
   return {
-    id,
-    name,
-    email,
     date,
+    value1,
+    value2,
     status
   };
 };
 
-export const generateBulkData = (count = 5) => {
+export const generateBulkData = (count = 10) => {
   const data = [];
-  const usedNames = new Set();
+  const usedDates = new Set();
   
   for (let i = 0; i < count; i++) {
     let sampleData;
@@ -55,10 +42,13 @@ export const generateBulkData = (count = 5) => {
     do {
       sampleData = generateSampleData();
       attempts++;
-    } while (usedNames.has(sampleData.name) && attempts < 20);
+    } while (usedDates.has(sampleData.date) && attempts < 50);
     
-    if (!usedNames.has(sampleData.name)) {
-      usedNames.add(sampleData.name);
+    if (!usedDates.has(sampleData.date)) {
+      usedDates.add(sampleData.date);
+      data.push(sampleData);
+    } else {
+      sampleData.date = getRandomDate(60);
       data.push(sampleData);
     }
   }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,48 +8,111 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { useAuth } from "../../contexts/AuthContext";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import Button from "../../components/ui/Button";
 import DataTable from "../../components/ui/DataTable";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { generateBulkData } from "../../utils/dataGenerator";
+import {
+  getUserData,
+  createBulkData,
+  clearAllUserData,
+  deleteDataEntry,
+} from "../../services/dataService";
 import { getColors } from "../../constants/Colors";
 
-export default function TableScreen() {
+function TableScreen() {
   const { theme } = useSettings();
   const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const colors = getColors(theme);
+
   const [data, setData] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
+  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  const loadData = async () => {
+    if (!currentUser?.uid) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const result = await getUserData(currentUser.uid, sortOrder);
+
+    if (result.success) {
+      setData(result.data);
+    } else {
+      console.warn("Failed to load data:", result.error);
+      setData([]);
+      if (result.error !== "Firestore not available") {
+        Alert.alert(t("common.error"), t("table.loadError"));
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadData();
+    } else {
+      setData([]);
+      setLoading(false);
+    }
+  }, [currentUser, sortOrder]);
 
   const handleGenerateData = () => {
+    if (!currentUser?.uid) {
+      Alert.alert(t("common.error"), "Please login to generate data");
+      return;
+    }
+
     Alert.alert(t("table.generateTitle"), t("table.generateMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
         text: t("table.generate"),
         onPress: async () => {
           setGenerating(true);
-          setTimeout(() => {
-            const newData = generateBulkData(10);
-            setData(newData);
-            setGenerating(false);
+          const newData = generateBulkData(10);
+
+          const result = await createBulkData(currentUser.uid, newData);
+
+          if (result.success) {
+            await loadData();
             Alert.alert(t("common.success"), t("table.generateSuccess"));
-          }, 1000);
+          } else {
+            Alert.alert(t("common.error"), t("table.saveError"));
+          }
+          setGenerating(false);
         },
       },
     ]);
   };
 
   const handleClearData = () => {
+    if (!currentUser?.uid) return;
+
     Alert.alert(t("table.clearTitle"), t("table.clearMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
         text: t("table.clear"),
         style: "destructive",
-        onPress: () => {
-          setData([]);
-          Alert.alert(t("common.success"), t("table.clearSuccess"));
+        onPress: async () => {
+          setClearing(true);
+          const result = await clearAllUserData(currentUser.uid);
+
+          if (result.success) {
+            setData([]);
+            Alert.alert(t("common.success"), t("table.clearSuccess"));
+          } else {
+            Alert.alert(t("common.error"), t("table.saveError"));
+          }
+          setClearing(false);
         },
       },
     ]);
@@ -58,33 +121,37 @@ export default function TableScreen() {
   const handleSortToggle = () => {
     const newOrder = sortOrder === "desc" ? "asc" : "desc";
     setSortOrder(newOrder);
-
-    const sortedData = [...data].sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return newOrder === "desc" ? dateB - dateA : dateA - dateB;
-    });
-
-    setData(sortedData);
   };
 
   const handleEdit = (item) => {
-    Alert.alert(t("table.editTitle"), `${t("table.editMessage")} ${item.name}`);
+    Alert.alert(
+      t("table.editTitle"),
+      `${t("table.editMessage")}\nDate: ${item.date}\nValue 1: ${
+        item.value1
+      }\nValue 2: ${item.value2}`
+    );
   };
 
   const handleDelete = (item) => {
+    if (!currentUser?.uid) return;
+
     Alert.alert(
       t("table.deleteTitle"),
-      `${t("table.deleteMessage")} ${item.name}?`,
+      `${t("table.deleteMessage")}\nDate: ${item.date}`,
       [
         { text: t("common.cancel"), style: "cancel" },
         {
           text: t("common.delete"),
           style: "destructive",
-          onPress: () => {
-            const newData = data.filter((d) => d.id !== item.id);
-            setData(newData);
-            Alert.alert(t("common.success"), t("table.deleteSuccess"));
+          onPress: async () => {
+            const result = await deleteDataEntry(currentUser.uid, item.id);
+
+            if (result.success) {
+              await loadData();
+              Alert.alert(t("common.success"), t("table.deleteSuccess"));
+            } else {
+              Alert.alert(t("common.error"), t("table.saveError"));
+            }
           },
         },
       ]
@@ -92,6 +159,16 @@ export default function TableScreen() {
   };
 
   const styles = createStyles(colors);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <LoadingSpinner text={t("common.loading")} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,15 +187,16 @@ export default function TableScreen() {
             title={generating ? t("table.generating") : t("table.generateData")}
             onPress={handleGenerateData}
             style={styles.generateButton}
-            disabled={generating}
+            disabled={generating || clearing}
           />
 
           {data.length > 0 && (
             <Button
-              title={t("table.clearData")}
+              title={clearing ? "Clearing..." : t("table.clearData")}
               onPress={handleClearData}
               variant="outline"
               style={styles.clearButton}
+              disabled={generating || clearing}
             />
           )}
 
@@ -128,6 +206,7 @@ export default function TableScreen() {
               <TouchableOpacity
                 style={styles.sortButton}
                 onPress={handleSortToggle}
+                disabled={generating || clearing}
               >
                 <Text style={styles.sortButtonText}>
                   {sortOrder === "desc"
@@ -143,16 +222,16 @@ export default function TableScreen() {
           {data.length > 0 ? (
             <DataTable
               headers={[
-                t("common.name"),
-                t("common.email"),
                 t("table.date"),
+                t("table.value1"),
+                t("table.value2"),
                 t("table.status"),
                 t("common.actions"),
               ]}
               data={data}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              keyExtractor={(item, index) => `table-item-${index}`}
+              keyExtractor={(item, index) => item.id || `table-item-${index}`}
             />
           ) : (
             <View style={styles.emptyContainer}>
@@ -171,6 +250,11 @@ const createStyles = (colors) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
     },
     header: {
       paddingHorizontal: 24,
@@ -260,3 +344,5 @@ const createStyles = (colors) =>
       lineHeight: 20,
     },
   });
+
+export default TableScreen;

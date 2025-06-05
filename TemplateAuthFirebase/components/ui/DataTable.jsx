@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { Colors } from "../../constants/Colors";
 
@@ -12,10 +13,9 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "active":
-      case "verified":
+      case "completed":
         return Colors.success;
       case "pending":
-      case "warning":
         return Colors.warning;
       case "inactive":
       case "error":
@@ -23,6 +23,13 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
       default:
         return Colors.gray700;
     }
+  };
+
+  const formatNumber = (value) => {
+    if (typeof value === "number") {
+      return value.toFixed(2);
+    }
+    return String(value);
   };
 
   const renderActionButtons = (item, rowIndex) => {
@@ -52,16 +59,24 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
       return renderActionButtons(value, rowIndex);
     }
 
-    if (typeof value === "object" && value.status) {
+    if (columnIndex === 3) {
       return (
         <Text
           style={[
             styles.cellText,
             styles.statusText,
-            { color: getStatusColor(value.status) },
+            { color: getStatusColor(value) },
           ]}
         >
-          {value.status}
+          {String(value)}
+        </Text>
+      );
+    }
+
+    if (columnIndex === 1 || columnIndex === 2) {
+      return (
+        <Text style={[styles.cellText, styles.numberText]} numberOfLines={1}>
+          {formatNumber(value)}
         </Text>
       );
     }
@@ -97,16 +112,16 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
               ]}
             >
               <View style={[styles.dataCell, styles.column0]}>
-                {renderCell(row.name, 0, rowIndex)}
+                {renderCell(row.date, 0, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column1]}>
-                {renderCell(row.email, 1, rowIndex)}
+                {renderCell(row.value1, 1, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column2]}>
-                {renderCell(row.date, 2, rowIndex)}
+                {renderCell(row.value2, 2, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column3]}>
-                {renderCell({ status: row.status }, 3, rowIndex)}
+                {renderCell(row.status, 3, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column4]}>
                 {renderCell(row, 4, rowIndex)}
@@ -174,6 +189,10 @@ const styles = StyleSheet.create({
     color: Colors.gray700,
     textAlign: "center",
   },
+  numberText: {
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    fontWeight: "500",
+  },
   statusText: {
     fontWeight: "500",
     textTransform: "capitalize",
@@ -203,16 +222,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   column0: {
-    width: 120,
+    width: 110,
   },
   column1: {
-    width: 150,
+    width: 90,
   },
   column2: {
-    width: 100,
+    width: 90,
   },
   column3: {
-    width: 80,
+    width: 90,
   },
   column4: {
     width: 90,
