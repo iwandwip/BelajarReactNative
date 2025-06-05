@@ -21,12 +21,13 @@ import {
   clearAllUserData,
   deleteDataEntry,
 } from "../../services/dataService";
+import { exportToExcel, exportToPDF } from "../../services/exportService";
 import { getColors } from "../../constants/Colors";
 
 function TableScreen() {
   const { theme } = useSettings();
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const colors = getColors(theme);
 
   const [data, setData] = useState([]);
@@ -34,6 +35,8 @@ function TableScreen() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const loadData = async () => {
     if (!currentUser?.uid) {
@@ -123,6 +126,40 @@ function TableScreen() {
     setSortOrder(newOrder);
   };
 
+  const handleExportExcel = async () => {
+    if (!data || data.length === 0) {
+      Alert.alert(t("common.error"), t("table.noDataToExport"));
+      return;
+    }
+
+    setExportingExcel(true);
+    const result = await exportToExcel(data, userProfile);
+
+    if (result.success) {
+      Alert.alert(t("common.success"), t("table.exportSuccess"));
+    } else {
+      Alert.alert(t("common.error"), t("table.exportError"));
+    }
+    setExportingExcel(false);
+  };
+
+  const handleExportPdf = async () => {
+    if (!data || data.length === 0) {
+      Alert.alert(t("common.error"), t("table.noDataToExport"));
+      return;
+    }
+
+    setExportingPdf(true);
+    const result = await exportToPDF(data, userProfile);
+
+    if (result.success) {
+      Alert.alert(t("common.success"), t("table.exportSuccess"));
+    } else {
+      Alert.alert(t("common.error"), t("table.exportError"));
+    }
+    setExportingPdf(false);
+  };
+
   const handleEdit = (item) => {
     Alert.alert(
       t("table.editTitle"),
@@ -187,17 +224,49 @@ function TableScreen() {
             title={generating ? t("table.generating") : t("table.generateData")}
             onPress={handleGenerateData}
             style={styles.generateButton}
-            disabled={generating || clearing}
+            disabled={generating || clearing || exportingExcel || exportingPdf}
           />
 
           {data.length > 0 && (
-            <Button
-              title={clearing ? "Clearing..." : t("table.clearData")}
-              onPress={handleClearData}
-              variant="outline"
-              style={styles.clearButton}
-              disabled={generating || clearing}
-            />
+            <>
+              <View style={styles.exportContainer}>
+                <Button
+                  title={
+                    exportingExcel
+                      ? t("table.exporting")
+                      : t("table.exportExcel")
+                  }
+                  onPress={handleExportExcel}
+                  variant="secondary"
+                  style={styles.exportButton}
+                  disabled={
+                    generating || clearing || exportingExcel || exportingPdf
+                  }
+                />
+
+                <Button
+                  title={
+                    exportingPdf ? t("table.exporting") : t("table.exportPdf")
+                  }
+                  onPress={handleExportPdf}
+                  variant="secondary"
+                  style={styles.exportButton}
+                  disabled={
+                    generating || clearing || exportingExcel || exportingPdf
+                  }
+                />
+              </View>
+
+              <Button
+                title={clearing ? "Clearing..." : t("table.clearData")}
+                onPress={handleClearData}
+                variant="outline"
+                style={styles.clearButton}
+                disabled={
+                  generating || clearing || exportingExcel || exportingPdf
+                }
+              />
+            </>
           )}
 
           {data.length > 0 && (
@@ -206,7 +275,9 @@ function TableScreen() {
               <TouchableOpacity
                 style={styles.sortButton}
                 onPress={handleSortToggle}
-                disabled={generating || clearing}
+                disabled={
+                  generating || clearing || exportingExcel || exportingPdf
+                }
               >
                 <Text style={styles.sortButtonText}>
                   {sortOrder === "desc"
@@ -289,6 +360,14 @@ const createStyles = (colors) =>
     },
     generateButton: {
       marginBottom: 12,
+    },
+    exportContainer: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 12,
+    },
+    exportButton: {
+      flex: 1,
     },
     clearButton: {
       marginBottom: 16,
