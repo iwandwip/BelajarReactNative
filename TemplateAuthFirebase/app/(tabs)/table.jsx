@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -34,6 +35,7 @@ function TableScreen() {
   const [data, setData] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
@@ -43,14 +45,18 @@ function TableScreen() {
   const [endDate, setEndDate] = useState("");
   const [isFiltered, setIsFiltered] = useState(false);
 
-  const loadData = async (filterStartDate = null, filterEndDate = null) => {
+  const loadData = async (
+    filterStartDate = null,
+    filterEndDate = null,
+    isRefresh = false
+  ) => {
     if (!currentUser?.uid) {
       setData([]);
-      setLoading(false);
+      if (!isRefresh) setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!isRefresh) setLoading(true);
     const result = await getUserData(
       currentUser.uid,
       sortOrder,
@@ -63,11 +69,21 @@ function TableScreen() {
     } else {
       console.warn("Failed to load data:", result.error);
       setData([]);
-      if (result.error !== "Firestore not available") {
+      if (result.error !== "Firestore not available" && !isRefresh) {
         Alert.alert(t("common.error"), t("table.loadError"));
       }
     }
-    setLoading(false);
+    if (!isRefresh) setLoading(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (isFiltered) {
+      await loadData(startDate, endDate, true);
+    } else {
+      await loadData(null, null, true);
+    }
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -258,6 +274,15 @@ function TableScreen() {
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            title={t("common.refreshing")}
+          />
+        }
       >
         <View style={styles.actionsContainer}>
           <Button

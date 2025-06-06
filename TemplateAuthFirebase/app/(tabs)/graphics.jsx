@@ -7,8 +7,10 @@ import {
   ScrollView,
   Dimensions,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { LineChart, BarChart, PieChart } from "react-native-chart-kit";
+import { usePathname } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -23,19 +25,21 @@ function GraphicsScreen() {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
   const colors = getColors(theme);
+  const pathname = usePathname();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [chartType, setChartType] = useState("line");
 
-  const loadData = async () => {
+  const loadData = async (isRefresh = false) => {
     if (!currentUser?.uid) {
       setData([]);
-      setLoading(false);
+      if (!isRefresh) setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!isRefresh) setLoading(true);
     const result = await getUserData(currentUser.uid, "asc");
 
     if (result.success) {
@@ -44,7 +48,14 @@ function GraphicsScreen() {
       console.warn("Failed to load data:", result.error);
       setData([]);
     }
-    setLoading(false);
+
+    if (!isRefresh) setLoading(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData(true);
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -55,6 +66,12 @@ function GraphicsScreen() {
       setLoading(false);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (pathname === "/graphics" && currentUser?.uid) {
+      loadData(true);
+    }
+  }, [pathname, currentUser]);
 
   const getChartData = () => {
     if (!data || data.length === 0) return null;
@@ -214,6 +231,15 @@ function GraphicsScreen() {
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            title={t("common.refreshing")}
+          />
+        }
       >
         <View style={styles.chartTypeContainer}>
           <TouchableOpacity
