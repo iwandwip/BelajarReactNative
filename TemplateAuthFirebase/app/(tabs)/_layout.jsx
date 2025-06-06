@@ -41,6 +41,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="graphics"
+        options={{
+          title: t("common.graphics"),
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>📈</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t("common.settings"),

@@ -32,6 +32,18 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
     return String(value);
   };
 
+  const formatDateTime = (datetime) => {
+    if (!datetime) return "";
+    const date = new Date(datetime);
+    return date.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
   const renderActionButtons = (item, rowIndex) => {
     const originalItem = data[rowIndex];
 
@@ -69,6 +81,14 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
           ]}
         >
           {String(value)}
+        </Text>
+      );
+    }
+
+    if (columnIndex === 0) {
+      return (
+        <Text style={[styles.cellText, styles.dateTimeText]} numberOfLines={2}>
+          {formatDateTime(value)}
         </Text>
       );
     }
@@ -112,7 +132,7 @@ const DataTable = ({ headers, data, onEdit, onDelete, keyExtractor }) => {
               ]}
             >
               <View style={[styles.dataCell, styles.column0]}>
-                {renderCell(row.date, 0, rowIndex)}
+                {renderCell(row.datetime, 0, rowIndex)}
               </View>
               <View style={[styles.dataCell, styles.column1]}>
                 {renderCell(row.value1, 1, rowIndex)}
@@ -189,6 +209,11 @@ const styles = StyleSheet.create({
     color: Colors.gray700,
     textAlign: "center",
   },
+  dateTimeText: {
+    fontSize: 11,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    lineHeight: 14,
+  },
   numberText: {
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     fontWeight: "500",
@@ -222,7 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   column0: {
-    width: 110,
+    width: 120,
   },
   column1: {
     width: 90,

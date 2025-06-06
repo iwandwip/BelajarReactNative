@@ -5,12 +5,21 @@ const getRandomFloat = (min = 0, max = 1000, decimals = 2) => {
   return parseFloat(value.toFixed(decimals));
 };
 
-const getRandomDate = (daysBack = 30) => {
-  const today = new Date();
+const getRandomDateTime = (daysBack = 30) => {
+  const now = new Date();
   const randomDays = Math.floor(Math.random() * daysBack);
-  const randomDate = new Date(today.getTime() - (randomDays * 24 * 60 * 60 * 1000));
+  const randomHours = Math.floor(Math.random() * 24);
+  const randomMinutes = Math.floor(Math.random() * 60);
+  const randomSeconds = Math.floor(Math.random() * 60);
   
-  return randomDate.toISOString().split('T')[0];
+  const randomDate = new Date(
+    now.getTime() - (randomDays * 24 * 60 * 60 * 1000) + 
+    (randomHours * 60 * 60 * 1000) + 
+    (randomMinutes * 60 * 1000) + 
+    (randomSeconds * 1000)
+  );
+  
+  return randomDate.toISOString();
 };
 
 const getRandomStatus = () => {
@@ -18,13 +27,13 @@ const getRandomStatus = () => {
 };
 
 export const generateSampleData = () => {
-  const date = getRandomDate();
+  const datetime = getRandomDateTime();
   const value1 = getRandomFloat(10, 500, 2);
   const value2 = getRandomFloat(1, 100, 2);
   const status = getRandomStatus();
 
   return {
-    date,
+    datetime,
     value1,
     value2,
     status
@@ -33,7 +42,7 @@ export const generateSampleData = () => {
 
 export const generateBulkData = (count = 10) => {
   const data = [];
-  const usedDates = new Set();
+  const usedDateTimes = new Set();
   
   for (let i = 0; i < count; i++) {
     let sampleData;
@@ -42,16 +51,16 @@ export const generateBulkData = (count = 10) => {
     do {
       sampleData = generateSampleData();
       attempts++;
-    } while (usedDates.has(sampleData.date) && attempts < 50);
+    } while (usedDateTimes.has(sampleData.datetime) && attempts < 50);
     
-    if (!usedDates.has(sampleData.date)) {
-      usedDates.add(sampleData.date);
+    if (!usedDateTimes.has(sampleData.datetime)) {
+      usedDateTimes.add(sampleData.datetime);
       data.push(sampleData);
     } else {
-      sampleData.date = getRandomDate(60);
+      sampleData.datetime = getRandomDateTime(60);
       data.push(sampleData);
     }
   }
   
-  return data.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return data.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
 };

@@ -16,7 +16,7 @@ const formatDateForFilename = () => {
 
 const formatDataForExport = (data) => {
   return data.map(item => ({
-    Date: item.date,
+    DateTime: new Date(item.datetime).toLocaleString(),
     'Value 1': Number(item.value1).toFixed(2),
     'Value 2': Number(item.value2).toFixed(2),
     Status: item.status
@@ -34,7 +34,7 @@ export const exportToExcel = async (data, userProfile) => {
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     
     const columnWidths = [
-      { wch: 12 },
+      { wch: 20 },
       { wch: 12 },
       { wch: 12 },
       { wch: 15 }
@@ -92,20 +92,20 @@ export const exportToPDF = async (data, userProfile) => {
     }
 
     const tableData = data.map(item => [
-      item.date,
+      new Date(item.datetime).toLocaleString(),
       Number(item.value1).toFixed(2),
       Number(item.value2).toFixed(2),
       item.status
     ]);
 
     doc.autoTable({
-      head: [['Date', 'Value 1', 'Value 2', 'Status']],
+      head: [['Date Time', 'Value 1', 'Value 2', 'Status']],
       body: tableData,
       startY: 45,
       theme: 'striped',
       styles: {
-        fontSize: 9,
-        cellPadding: 3,
+        fontSize: 8,
+        cellPadding: 2,
       },
       headStyles: {
         fillColor: [245, 0, 87],
@@ -116,10 +116,10 @@ export const exportToPDF = async (data, userProfile) => {
         fillColor: [249, 249, 249]
       },
       columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 30, halign: 'right' },
-        2: { cellWidth: 30, halign: 'right' },
-        3: { cellWidth: 35, halign: 'center' }
+        0: { cellWidth: 40 },
+        1: { cellWidth: 25, halign: 'right' },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 30, halign: 'center' }
       }
     });
 

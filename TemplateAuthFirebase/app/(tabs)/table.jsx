@@ -13,6 +13,7 @@ import { useSettings } from "../../contexts/SettingsContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import Button from "../../components/ui/Button";
 import DataTable from "../../components/ui/DataTable";
+import DatePicker from "../../components/ui/DatePicker";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { generateBulkData } from "../../utils/dataGenerator";
 import {
@@ -37,8 +38,12 @@ function TableScreen() {
   const [clearing, setClearing] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isFiltered, setIsFiltered] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (filterStartDate = null, filterEndDate = null) => {
     if (!currentUser?.uid) {
       setData([]);
       setLoading(false);
@@ -46,7 +51,12 @@ function TableScreen() {
     }
 
     setLoading(true);
-    const result = await getUserData(currentUser.uid, sortOrder);
+    const result = await getUserData(
+      currentUser.uid,
+      sortOrder,
+      filterStartDate,
+      filterEndDate
+    );
 
     if (result.success) {
       setData(result.data);
@@ -62,7 +72,11 @@ function TableScreen() {
 
   useEffect(() => {
     if (currentUser?.uid) {
-      loadData();
+      if (isFiltered) {
+        loadData(startDate, endDate);
+      } else {
+        loadData();
+      }
     } else {
       setData([]);
       setLoading(false);
@@ -126,6 +140,30 @@ function TableScreen() {
     setSortOrder(newOrder);
   };
 
+  const handleApplyFilter = async () => {
+    if (!startDate || !endDate) {
+      Alert.alert(t("common.error"), "Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      Alert.alert(t("common.error"), "Start date must be before end date");
+      return;
+    }
+
+    setIsFiltered(true);
+    await loadData(startDate, endDate);
+    setShowFilter(false);
+  };
+
+  const handleClearFilter = async () => {
+    setStartDate("");
+    setEndDate("");
+    setIsFiltered(false);
+    await loadData();
+    setShowFilter(false);
+  };
+
   const handleExportExcel = async () => {
     if (!data || data.length === 0) {
       Alert.alert(t("common.error"), t("table.noDataToExport"));
@@ -163,9 +201,9 @@ function TableScreen() {
   const handleEdit = (item) => {
     Alert.alert(
       t("table.editTitle"),
-      `${t("table.editMessage")}\nDate: ${item.date}\nValue 1: ${
-        item.value1
-      }\nValue 2: ${item.value2}`
+      `${t("table.editMessage")}\nDateTime: ${new Date(
+        item.datetime
+      ).toLocaleString()}\nValue 1: ${item.value1}\nValue 2: ${item.value2}`
     );
   };
 
@@ -174,7 +212,9 @@ function TableScreen() {
 
     Alert.alert(
       t("table.deleteTitle"),
-      `${t("table.deleteMessage")}\nDate: ${item.date}`,
+      `${t("table.deleteMessage")}\nDateTime: ${new Date(
+        item.datetime
+      ).toLocaleString()}`,
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -226,6 +266,68 @@ function TableScreen() {
             style={styles.generateButton}
             disabled={generating || clearing || exportingExcel || exportingPdf}
           />
+
+          <View style={styles.filterContainer}>
+            <Button
+              title={showFilter ? t("common.cancel") : t("table.filter")}
+              onPress={() => setShowFilter(!showFilter)}
+              variant="outline"
+              style={styles.filterButton}
+              disabled={
+                generating || clearing || exportingExcel || exportingPdf
+              }
+            />
+
+            {isFiltered && (
+              <Text style={styles.filterStatus}>
+                {t("table.showingFiltered")}
+              </Text>
+            )}
+          </View>
+
+          {showFilter && (
+            <View style={styles.filterForm}>
+              <Text style={styles.filterTitle}>{t("table.filterByDate")}</Text>
+
+              <View style={styles.datePickerRow}>
+                <View style={styles.datePickerContainer}>
+                  <DatePicker
+                    label={t("table.startDate")}
+                    placeholder="Select start date"
+                    value={startDate}
+                    onChange={setStartDate}
+                    style={styles.datePicker}
+                  />
+                </View>
+
+                <View style={styles.datePickerContainer}>
+                  <DatePicker
+                    label={t("table.endDate")}
+                    placeholder="Select end date"
+                    value={endDate}
+                    onChange={setEndDate}
+                    style={styles.datePicker}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.filterActions}>
+                <Button
+                  title={t("table.applyFilter")}
+                  onPress={handleApplyFilter}
+                  style={styles.applyFilterButton}
+                  disabled={!startDate || !endDate}
+                />
+
+                <Button
+                  title={t("table.clearFilter")}
+                  onPress={handleClearFilter}
+                  variant="outline"
+                  style={styles.clearFilterButton}
+                />
+              </View>
+            </View>
+          )}
 
           {data.length > 0 && (
             <>
@@ -293,7 +395,7 @@ function TableScreen() {
           {data.length > 0 ? (
             <DataTable
               headers={[
-                t("table.date"),
+                t("table.datetime"),
                 t("table.value1"),
                 t("table.value2"),
                 t("table.status"),
@@ -360,6 +462,57 @@ const createStyles = (colors) =>
     },
     generateButton: {
       marginBottom: 12,
+    },
+    filterContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    filterButton: {
+      flex: 1,
+      marginRight: 12,
+    },
+    filterStatus: {
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: "500",
+    },
+    filterForm: {
+      backgroundColor: colors.white,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.gray200,
+    },
+    filterTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.gray900,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    datePickerRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 16,
+    },
+    datePickerContainer: {
+      flex: 1,
+    },
+    datePicker: {
+      marginBottom: 0,
+    },
+    filterActions: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    applyFilterButton: {
+      flex: 1,
+    },
+    clearFilterButton: {
+      flex: 1,
     },
     exportContainer: {
       flexDirection: "row",

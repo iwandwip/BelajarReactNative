@@ -7,7 +7,9 @@ import {
   updateDoc,
   query,
   orderBy,
-  writeBatch 
+  where,
+  writeBatch,
+  Timestamp 
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -40,7 +42,7 @@ export const createDataEntry = async (userId, dataEntry) => {
   }
 };
 
-export const getUserData = async (userId, sortOrder = 'desc') => {
+export const getUserData = async (userId, sortOrder = 'desc', startDate = null, endDate = null) => {
   try {
     if (!db) {
       console.warn('Firestore is not initialized, returning empty data');
@@ -52,10 +54,27 @@ export const getUserData = async (userId, sortOrder = 'desc') => {
     }
 
     const dataCollection = collection(db, 'users', userId, 'data');
-    const q = query(
-      dataCollection, 
-      orderBy('date', sortOrder)
-    );
+    let q = query(dataCollection);
+
+    if (startDate && endDate) {
+      const startDateTime = new Date(startDate);
+      startDateTime.setHours(0, 0, 0, 0);
+      
+      const endDateTime = new Date(endDate);
+      endDateTime.setHours(23, 59, 59, 999);
+
+      q = query(
+        dataCollection,
+        where('datetime', '>=', startDateTime.toISOString()),
+        where('datetime', '<=', endDateTime.toISOString()),
+        orderBy('datetime', sortOrder)
+      );
+    } else {
+      q = query(
+        dataCollection, 
+        orderBy('datetime', sortOrder)
+      );
+    }
     
     const querySnapshot = await getDocs(q);
     const data = [];
